@@ -17,25 +17,87 @@ namespace RandomBranchedPolymer
         {
             // Gets values from Form, if available
             NameValueCollection nvc = Request.Form;
-
             string InputValueString = "";
-            int inputvalue = 10;
 
-            // see if we have a value from the text box
-            if (!string.IsNullOrEmpty(nvc["txtInputValue"]))
+            // Set default Node Count to 10
+            int NodeCount = 10;
+
+            // Validate Node Count input
+            if (!string.IsNullOrEmpty(nvc["txtNodeCount"]))
             {
-                // store in string...
-                InputValueString = nvc["txtInputValue"];
+                // Convert input to string
+                InputValueString = nvc["txtNodeCount"];
 
-                if (!int.TryParse(InputValueString, out inputvalue))
+                if (!int.TryParse(InputValueString, out NodeCount))
                 {
-                    // can't do anything...
+                    // When input is invalid
                     divOutput.InnerHtml = "Error: Invalid Input - Input must be an integer.";
 
-                    // exit without continuing
+                    // Exit without generating a branched polymer
+                    return;
+                }
+
+                // Safety valve to prevent large computations on hosted web app
+                if (NodeCount > 500)
+                {
+                    divOutput.InnerHtml = "Error: Maximum value allowed is 500 until web hosting is updated.";
+
+                    // Exist without generating a branched polymer
                     return;
                 }
             }
+
+            // Set default Radius Ratio to 1
+            double ratio = 1;
+
+            // Validate Radius Ratio input
+            if (!string.IsNullOrEmpty(nvc["txtRadiusRatio"]))
+            {
+                // Convert input to string
+                InputValueString = nvc["txtRadiusRatio"];
+
+                if (!double.TryParse(InputValueString, out ratio))
+                {
+                    // When input is invalid
+                    divOutput.InnerHtml = "Error: Invalid Input - Please set the radial ratio between .5 and 2.";
+
+                    // Exit without generating a branched polymer
+                    return;
+                }
+<<<<<<< Updated upstream
+=======
+
+                // Safety valve to prevent large computations on hosted web app
+                if (ratio < .5 || ratio > 2)
+                {
+                    divOutput.InnerHtml = "Error: Radial ratio must be between .5 and 2.";
+
+                    // Exist without generating a branched polymer
+                    return;
+                }
+>>>>>>> Stashed changes
+            }
+
+            // Set default Growth Type to proportional
+            // true -> Radial growth in pixels per second is constant
+            // false -> Number of nodes added per second is constant, regardless of each radius
+            bool ProportionalGrowthTime = true;
+
+            // Validate Growth Type input
+            if (!string.IsNullOrEmpty(nvc["proportionalAnimation"]))
+            {
+                // Convert input to string
+                InputValueString = nvc["proportionalAnimation"];
+
+                if (!bool.TryParse(InputValueString, out ProportionalGrowthTime))
+                {
+                    // Leave growth type at default
+                }
+            }
+
+
+
+
 
             DateTime StartTime = DateTime.Now;
 
@@ -44,25 +106,47 @@ namespace RandomBranchedPolymer
             //FileStream traceLog = new FileStream(filename, FileMode.OpenOrCreate);
             //System.Diagnostics.Trace.Listeners.Add(new TextWriterTraceListener(traceLog));
             //System.Diagnostics.Trace.AutoFlush = true;
+            // debug
+            //string ConnectionTracker = "";
 
-            string ConnectionTracker = "";
-            double NodeTime = 0.4;
-            double NodeSize = 10;
-            //collect nodes drawn as cirles and animation times
-            string[] GrowthAnimation = new string[inputvalue];
-            //collect paths (locations) of each node
-            string[] GrowthAnimationTranslate = new string[inputvalue];
+
+            // Set paramenters for SVG image and animation
+            double TimeScale = .5;
+            double NodeTime = TimeScale;
+            double DrawingScale = 10;           
+
+
+            // Collect nodes drawn as cirles and animation times
+            string[] GrowthAnimation = new string[NodeCount];
+            // Collect paths (locations) of each node
+            string[] GrowthAnimationTranslate = new string[NodeCount];
             //string history = @"";
             string process = @"";
             Random rng = new Random();
+
+            // Initialize a branched polymer with target radius for each node
+            // All nodes have same target radius of 1 here
+            // Future plans: This can be adjusted for other, non-uniform choice of radii
             Dictionary<int, Node> Polymer = new Dictionary<int, Node>();
-            for (int i = 1; i <= inputvalue; i++)
+            for (int i = 1; i <= NodeCount; i++)
             {
-                Polymer.Add(i, new Node(i,1));
+                Polymer.Add(i, new Node(i, Math.Max(Math.Pow(ratio,i-1),.0001) ));
             }
-            //path names: <new node>_<branch base>_<segment>
+
+            
+            if (ProportionalGrowthTime == true)
+            {
+                NodeTime = TimeScale * Polymer[1].Radius;
+            }
+            else 
+            {
+                NodeTime = TimeScale;
+            }
+
+            // Initialize Animation with first node
+            // Path names: <new node>_<branch base>_<segment>
             GrowthAnimation[0] = @"<circle id='c1' r='0' stroke='black' stroke-width='1' fill='none'>" +
-                "<animate id='r1' attributeName='r' attributeType='XML' to ='" + NodeSize + "' fill='freeze' dur='" + NodeTime + "s' />" +
+                "<animate id='r1' attributeName='r' attributeType='XML' to ='" + DrawingScale*Polymer[1].Radius + "' fill='freeze' dur='" + NodeTime + "s' />" +
                 "<animateMotion id='m1_1_1' dur='" + NodeTime + "' fill='freeze'><mpath xlink:href='#p1_1_1'/></animateMotion>";
             GrowthAnimationTranslate[0] = @"<path d='M0 0 0 0' id='p1_1_1'/>";
             //track number of segments for previous node attachment
@@ -75,27 +159,31 @@ namespace RandomBranchedPolymer
             string lastAnimation = "1_1_1";
             for (int i = 2; i <= Polymer.Count; i++)
             {
-                //choose an existing node to attach next node
+                // Choose an existing node at random as parent for next node i
                 int attach = rng.Next(1, i);
-                //attach new node
+                // Choose angle of attachment at random
+                double angle = rng.NextDouble() * 2 * Math.PI;
+                // Form node attachment as randomly generated
                 Polymer[attach].Children.Add(Polymer[i]);
                 Polymer[i].Parent = Polymer[attach];
-                //choose angle of attachment
-                double angle = rng.NextDouble() * 2 * Math.PI;
-                //set angle
                 Polymer[i].Theta = angle;
-                //compute and set x,y location
                 Polymer[i].X = Polymer[attach].X + Polymer[attach].Radius * Math.Cos(angle);
                 Polymer[i].Y = Polymer[attach].Y + Polymer[attach].Radius * Math.Sin(angle);
-                //draw the new node as a point in the animation sequence
+
+                if (ProportionalGrowthTime == true)
+                {
+                    NodeTime = TimeScale * Polymer[i].Radius;
+                }
+
+                // Draw the new node as a point in the animation sequence
                 GrowthAnimation[i - 1] += "<circle id='c" + i + "' r='0' stroke='black' stroke-width='1' fill='none'>";
-                GrowthAnimation[i - 1] += "<animate id='r" + i + "' attributeName='r' attributeType='XML' to='" + NodeSize + "' fill='freeze' begin='r" + (i - 1) + ".end' dur='" + NodeTime + "s'/>";
-                //debug
-                TimeSpan timespan = CalcTimeDiff(StartTime, DateTime.Now);
-                //debug
-                ConnectionTracker = "Node: " +i+ ", attach = " + attach + ", angle = " + angle;
+                GrowthAnimation[i - 1] += "<animate id='r" + i + "' attributeName='r' attributeType='XML' to='" + DrawingScale*Polymer[i].Radius + "' fill='freeze' begin='r" + (i - 1) + ".end' dur='" + NodeTime + "s'/>";
+                // debug
+                //TimeSpan timespan = CalcTimeDiff(StartTime, DateTime.Now);
+                // debug
+                //ConnectionTracker = "Node: " +i+ ", attach = " + attach + ", angle = " + angle;
                 //history += "attach = " + attach + ", angle = " + angle + ".<br>";
-                Debug.WriteLine(ConnectionTracker + ", " + timespan.TotalMinutes);
+                //Debug.WriteLine(ConnectionTracker + ", " + timespan.TotalMinutes);
                 //System.Diagnostics.Trace.WriteLine(ConnectionTracker + ", " + timespan.TotalMinutes);
 
                 Dictionary<int, Node> SubPolymer = new Dictionary<int, Node>();
@@ -140,9 +228,9 @@ namespace RandomBranchedPolymer
                 {
                     //compute duration of of growth that just occurred; increase to 0.5ms if smaller so SVG element view the time as non-null
                     duration = "0.5m";
-                    if ((Polymer[i].Radius - lastRadius) * NodeTime > 0.0005)
+                    if ((Polymer[i].Radius - lastRadius) / radius * NodeTime > 0.0005)
                     {
-                        duration = ((Polymer[i].Radius - lastRadius) * NodeTime).ToString();
+                        duration = ((Polymer[i].Radius - lastRadius) / radius * NodeTime).ToString();
                     }
                     for (int j = 0; j < i; j++)
                     {
@@ -154,30 +242,30 @@ namespace RandomBranchedPolymer
                         }
                     }
                     //GrowthAnimation[i - 1] += @"
-                    //<animate attributeName='r' attributeType='XML' to='" + Polymer[i].Radius * NodeSize + "' fill='freeze' begin='m" + (i-1) + "_" + (i-1) + "_" + segmenttotal + ".end' dur='" + (Polymer[i].Radius - lastRadius)*NodeTime + "s'/>";
+                    //<animate attributeName='r' attributeType='XML' to='" + Polymer[i].Radius * DrawingScale + "' fill='freeze' begin='m" + (i-1) + "_" + (i-1) + "_" + segmenttotal + ".end' dur='" + (Polymer[i].Radius - lastRadius)*NodeTime + "s'/>";
 
                     GrowthAnimation[i-1] += @"
 <animateMotion id = 'm" + i + "_" + i + "_" + growthsegment + "' begin='m" + lastAnimation + ".end' dur='" + duration + "s' fill = 'freeze'><mpath xlink: href = '#p" + i + "_" + i + "_" + growthsegment + "'/></animateMotion>";
                     //path of active node
-                    GrowthAnimationTranslate[i-1] += @"<path d='M"+ lastX*NodeSize + " " + lastY*NodeSize + " " + Polymer[i].X*NodeSize + " " + Polymer[i].Y*NodeSize + "' id='p" + i + "_" + i + "_" + growthsegment + "'/>";
+                    GrowthAnimationTranslate[i-1] += @"<path d='M"+ lastX*DrawingScale + " " + lastY*DrawingScale + " " + Polymer[i].X*DrawingScale + " " + Polymer[i].Y*DrawingScale + "' id='p" + i + "_" + i + "_" + growthsegment + "'/>";
                     lastAnimation = i + "_" + i + "_" + growthsegment;
                     //paths of branches
                     for (int j = 0; j < i; j++)
                     {
                         if (openPaths[j] == 1)
                         {
-                            GrowthAnimationTranslate[j] += @" " + Polymer[j+1].X * NodeSize + " " + Polymer[j+1].Y * NodeSize + "' id='p" + i + "_" + (j+1) + "_" + (growthsegment) + "'/>";
+                            GrowthAnimationTranslate[j] += @" " + Polymer[j+1].X * DrawingScale + " " + Polymer[j+1].Y * DrawingScale + "' id='p" + i + "_" + (j+1) + "_" + (growthsegment) + "'/>";
                             openPaths[j] = 0;
                         }
                     }
                     foreach (NodeGroup branch in Branches)
                     {
                         int branchBase = branch.BranchNode.Label;
-                        //GrowthAnimationTranslate[branchBase-1] += @"<path d='M" + Polymer[branchBase].X*NodeSize + " " + Polymer[branchBase].Y*NodeSize;
+                        //GrowthAnimationTranslate[branchBase-1] += @"<path d='M" + Polymer[branchBase].X*DrawingScale + " " + Polymer[branchBase].Y*DrawingScale;
                         //openPaths[branchBase - 1] = 1;
                         foreach (Node member in branch.Members)
                         {
-                            GrowthAnimationTranslate[member.Label-1] += @"<path d='M" + member.X * NodeSize + " " + member.Y * NodeSize;
+                            GrowthAnimationTranslate[member.Label-1] += @"<path d='M" + member.X * DrawingScale + " " + member.Y * DrawingScale;
                             openPaths[member.Label - 1] = 1;
                             //GrowthAnimation[member.Label - 1] += @"<animateMotion begin='m" + lastAnimation + ".end' dur='";
                             //openAnimates[member.Label - 1] = "s' fill = 'freeze'><mpath xlink: href = '#p" + i + "_" + branchBase + "_" + (growthsegment + 1) + "'/></animateMotion>";
@@ -196,9 +284,9 @@ namespace RandomBranchedPolymer
                 }
                 //compute duration of of growth that just occurred; increase to 0.5ms if smaller so SVG element view the time as non-null
                 duration = "0.5m";
-                if ((Polymer[i].Radius - lastRadius) * NodeTime > 0.0005)
+                if ((Polymer[i].Radius - lastRadius) / radius * NodeTime > 0.0005)
                 {
-                    duration = ((Polymer[i].Radius - lastRadius) * NodeTime).ToString();
+                    duration = ((Polymer[i].Radius - lastRadius) / radius * NodeTime).ToString();
                 }
                 for (int j = 0; j < i; j++)
                 {
@@ -212,14 +300,14 @@ namespace RandomBranchedPolymer
                 GrowthAnimation[i - 1] += @"
 <animateMotion id = 'm" + i + "_" + i + "_" + growthsegment + "' begin='m" + lastAnimation + ".end' dur='" + duration + "s' fill = 'freeze'><mpath xlink: href = '#p" + i + "_" + i + "_" + growthsegment + "'/></animateMotion>";
                 //path of active node
-                GrowthAnimationTranslate[i - 1] += @"<path d='M" + lastX * NodeSize + " " + lastY * NodeSize + " " + Polymer[i].X * NodeSize + " " + Polymer[i].Y * NodeSize + "' id='p" + i + "_" + i + "_" + growthsegment + "'/>";
+                GrowthAnimationTranslate[i - 1] += @"<path d='M" + lastX * DrawingScale + " " + lastY * DrawingScale + " " + Polymer[i].X * DrawingScale + " " + Polymer[i].Y * DrawingScale + "' id='p" + i + "_" + i + "_" + growthsegment + "'/>";
                 lastAnimation = i + "_" + i + "_" + growthsegment;
                 //paths of branches
                 for (int j = 0; j <= i - 1; j++)
                 {
                     if (openPaths[j] == 1)
                     {
-                        GrowthAnimationTranslate[j] += @" " + Polymer[j + 1].X * NodeSize + " " + Polymer[j + 1].Y * NodeSize + "' id='p" + i + "_" + (j + 1) + "_" + (growthsegment) + "'/>";
+                        GrowthAnimationTranslate[j] += @" " + Polymer[j + 1].X * DrawingScale + " " + Polymer[j + 1].Y * DrawingScale + "' id='p" + i + "_" + (j + 1) + "_" + (growthsegment) + "'/>";
                         openPaths[j] = 0;
                     }
                 }
@@ -288,7 +376,7 @@ namespace RandomBranchedPolymer
 //</svg>";
 
                 // output html...
-                divOutput.InnerHtml = "Input Value: " + inputvalue.ToString();
+                divOutput.InnerHtml = "Input Value: " + NodeCount.ToString();
             divOutput.InnerHtml += "<br/>";
             //divOutput.InnerHtml += history;
             //divOutput.InnerHtml += "<br/>";
@@ -296,7 +384,7 @@ namespace RandomBranchedPolymer
             divOutput.InnerHtml += "<br/>";
             divOutput.InnerHtml += process;
             divOutput.InnerHtml += "<br/>";
-            divOutput.InnerHtml += "Other Static String: " + inputvalue.ToString();
+            divOutput.InnerHtml += "Other Static String: " + NodeCount.ToString();
             divOutput.InnerHtml += "<br/>";
 
             divOutput.InnerHtml += growth;
