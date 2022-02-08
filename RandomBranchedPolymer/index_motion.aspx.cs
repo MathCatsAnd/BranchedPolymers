@@ -64,10 +64,8 @@ namespace RandomBranchedPolymer
                     // Exit without generating a branched polymer
                     return;
                 }
-<<<<<<< Updated upstream
-=======
 
-                // Safety valve to prevent large computations on hosted web app
+                // Safety valve to keep displayed output within visible range
                 if (ratio < .5 || ratio > 2)
                 {
                     divOutput.InnerHtml = "Error: Radial ratio must be between .5 and 2.";
@@ -75,7 +73,6 @@ namespace RandomBranchedPolymer
                     // Exist without generating a branched polymer
                     return;
                 }
->>>>>>> Stashed changes
             }
 
             // Set default Growth Type to proportional
