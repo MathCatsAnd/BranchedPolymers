@@ -35,6 +35,14 @@ namespace RandomBranchedPolymer
                     // exit without continuing
                     return;
                 }
+                if (inputvalue > 100)
+                {
+                    // can't do anything...
+                    divOutput.InnerHtml = "Error: Step-wise display is limited to 100 nodes.";
+
+                    // exit without continuing
+                    return;
+                }
             }
 
             DateTime StartTime = DateTime.Now;

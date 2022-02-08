@@ -45,6 +45,15 @@ namespace RandomBranchedPolymer
                     // Exist without generating a branched polymer
                     return;
                 }
+
+                if (inputvalue > 200)
+                {
+                    // can't do anything...
+                    divOutput.InnerHtml = "Error: Maximum value allowed is 200 until further safety valves are implemented.";
+
+                    // exit without continuing
+                    return;
+                }
             }
 
             // Set default Radius Ratio to 1
@@ -118,7 +127,7 @@ namespace RandomBranchedPolymer
             // Collect paths (locations) of each node
             string[] GrowthAnimationTranslate = new string[NodeCount];
             //string history = @"";
-            string process = @"";
+            //string process = @"";
             Random rng = new Random();
 
             // Initialize a branched polymer with target radius for each node
@@ -322,12 +331,12 @@ namespace RandomBranchedPolymer
                         stop = Math.Max(stop, node.Y);
                         sbottom = Math.Min(sbottom, node.Y);
                     }
-                    process += "<svg height='" + (10 * (stop - sbottom) + 50) + "' width='" + (10 * (sright - sleft) + 50) + "' viewbox='" + (10 * sleft - 25) + " " + (10 * sbottom - 25) + " " + (10 * (sright - sleft) + 50) + " " + (10 * (stop - sbottom) + 50) + "'>";
-                    for (int j = 1; j <= SubPolymer.Count; j++)
-                    {
-                        process += "<circle cx='" + (SubPolymer[j].X * 10) + "' cy='" + (SubPolymer[j].Y * 10) + "' r='" + SubPolymer[j].Radius * 10 + "' stroke='black' stroke-width='1' fill='none'/><text x='" + ((SubPolymer[j].X * 10) - 5) + "' y='" + ((SubPolymer[j].Y * 10) + 5) + "' fill='red'>" + j + "</text> ";
-                    }
-                    process += "</svg>";
+                    //process += "<svg height='" + (10 * (stop - sbottom) + 50) + "' width='" + (10 * (sright - sleft) + 50) + "' viewbox='" + (10 * sleft - 25) + " " + (10 * sbottom - 25) + " " + (10 * (sright - sleft) + 50) + " " + (10 * (stop - sbottom) + 50) + "'>";
+                    //for (int j = 1; j <= SubPolymer.Count; j++)
+                    //{
+                    //    process += "<circle cx='" + (SubPolymer[j].X * 10) + "' cy='" + (SubPolymer[j].Y * 10) + "' r='" + SubPolymer[j].Radius * 10 + "' stroke='black' stroke-width='1' fill='none'/><text x='" + ((SubPolymer[j].X * 10) - 5) + "' y='" + ((SubPolymer[j].Y * 10) + 5) + "' fill='red'>" + j + "</text> ";
+                    //}
+                    //process += "</svg>";
                 }
             }
 
@@ -379,7 +388,9 @@ namespace RandomBranchedPolymer
             //divOutput.InnerHtml += "<br/>";
             divOutput.InnerHtml += dynamic;
             divOutput.InnerHtml += "<br/>";
-            divOutput.InnerHtml += process;
+
+            //While input is capped at 500, hide step-wise images
+            //divOutput.InnerHtml += process;
             divOutput.InnerHtml += "<br/>";
             divOutput.InnerHtml += "Other Static String: " + NodeCount.ToString();
             divOutput.InnerHtml += "<br/>";
