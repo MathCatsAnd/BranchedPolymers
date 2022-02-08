@@ -45,15 +45,6 @@ namespace RandomBranchedPolymer
                     // Exist without generating a branched polymer
                     return;
                 }
-
-                if (inputvalue > 200)
-                {
-                    // can't do anything...
-                    divOutput.InnerHtml = "Error: Maximum value allowed is 200 until further safety valves are implemented.";
-
-                    // exit without continuing
-                    return;
-                }
             }
 
             // Set default Radius Ratio to 1
