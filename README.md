@@ -10,3 +10,7 @@ Given circles labeled 1 through n, with each circle c(i) have some radius r(i), 
 As it is from 2015, the code is able to generate images and animations. The math which accomplishes the uniformly random generation does so by 'growing' a branched polymer one node at a time, constantly shifting the branched polymer throughout the process as it makes room for added circles muscling their way in.
 
 This readme will be updated as I beautify the code and interface.
+
+The algorithm for generating branched polymers uniformly at random was obtained from a 2007 paper by Richard Kenyon and Peter Winkler. "Branched Polymers" can be found in the mathematics section of the arXiv.
+arXiv:0709.2325v1 [math.PR]
+https://arxiv.org/pdf/0709.2325v1.pdf
